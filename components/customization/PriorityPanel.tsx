@@ -1,8 +1,11 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useComparisonStore } from '@/lib/store';
 import CategorySlider from './CategorySlider';
-import { Settings, TrendingUp, Eye, EyeOff } from 'lucide-react';
+import { Settings, TrendingUp, Eye, Sparkles, Loader2 } from 'lucide-react';
+import { loadHistory, getAveragePreferences, hasEnoughHistory } from '@/lib/storage';
+import { createPersonalizedWeights, simplePreferenceMapping } from '@/lib/ai/preferenceMapper';
 
 const PRESET_PROFILES = [
   {
@@ -23,7 +26,15 @@ const PRESET_PROFILES = [
 ];
 
 export default function PriorityPanel() {
-  const { comparison, updateCategoryWeight, updateUserPreferences } = useComparisonStore();
+  const { comparison, updateCategoryWeight, updateUserPreferences, apiKey } = useComparisonStore();
+  const [hasHistory, setHasHistory] = useState(false);
+  const [isLoadingPersonalized, setIsLoadingPersonalized] = useState(false);
+  const [personalizedError, setPersonalizedError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const history = loadHistory();
+    setHasHistory(hasEnoughHistory(history));
+  }, [comparison]);
 
   if (!comparison || !comparison.userPreferences) return null;
 
@@ -44,6 +55,49 @@ export default function PriorityPanel() {
       name: presetName,
       categoryWeights: updatedWeights
     });
+  };
+
+  const applyPersonalized = async () => {
+    if (!comparison.userPreferences) return;
+
+    setIsLoadingPersonalized(true);
+    setPersonalizedError(null);
+
+    try {
+      const history = loadHistory();
+      const averagePrefs = getAveragePreferences(history);
+      const currentCategories = comparison.userPreferences.categoryWeights.map(cw => cw.category);
+
+      let personalizedWeights;
+
+      if (apiKey) {
+        // Use AI to intelligently map preferences
+        personalizedWeights = await createPersonalizedWeights(
+          currentCategories,
+          averagePrefs,
+          apiKey
+        );
+      } else {
+        // Use simple string matching
+        const mapped = simplePreferenceMapping(averagePrefs, currentCategories);
+        personalizedWeights = currentCategories.map(cat => ({
+          category: cat,
+          importance: mapped[cat] || 5,
+          visible: true
+        }));
+      }
+
+      updateUserPreferences({
+        ...comparison.userPreferences,
+        name: 'Personalized',
+        categoryWeights: personalizedWeights
+      });
+    } catch (error) {
+      console.error('Failed to apply personalized preset:', error);
+      setPersonalizedError('Failed to load personalized preferences. Try again.');
+    } finally {
+      setIsLoadingPersonalized(false);
+    }
   };
 
   const resetToBalanced = () => {
@@ -79,6 +133,37 @@ export default function PriorityPanel() {
           Quick Presets
         </label>
         <div className="space-y-2">
+          {/* Personalized Preset */}
+          {hasHistory && (
+            <button
+              onClick={applyPersonalized}
+              disabled={isLoadingPersonalized}
+              className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                comparison.userPreferences?.name === 'Personalized'
+                  ? 'border-purple-500 bg-purple-50'
+                  : 'border-purple-200 hover:border-purple-300 hover:bg-purple-50'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              <div className="flex items-center gap-2">
+                {isLoadingPersonalized ? (
+                  <Loader2 className="w-4 h-4 text-purple-600 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4 text-purple-600" />
+                )}
+                <div className="font-medium text-sm text-gray-900">
+                  {isLoadingPersonalized ? 'Loading...' : 'Personalized'}
+                </div>
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                Based on your past preferences
+              </div>
+            </button>
+          )}
+          {personalizedError && (
+            <div className="text-xs text-red-600 px-3">{personalizedError}</div>
+          )}
+
+          {/* Standard Presets */}
           {PRESET_PROFILES.map((preset) => (
             <button
               key={preset.name}
