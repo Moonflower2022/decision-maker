@@ -2,7 +2,7 @@
 
 import { useComparisonStore } from '@/lib/store';
 import CategorySlider from './CategorySlider';
-import { Settings, TrendingUp } from 'lucide-react';
+import { Settings, TrendingUp, Eye, EyeOff } from 'lucide-react';
 
 const PRESET_PROFILES = [
   {
@@ -93,6 +93,52 @@ export default function PriorityPanel() {
               <div className="text-xs text-gray-500 mt-1">{preset.description}</div>
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Display Settings */}
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex items-center gap-2 mb-4">
+          <Eye className="w-4 h-4 text-gray-600" />
+          <h4 className="text-sm font-medium text-gray-700">Display Options</h4>
+        </div>
+        <div className="space-y-3">
+          <label className="flex items-center justify-between cursor-pointer">
+            <span className="text-sm text-gray-700">Show Winner Banner</span>
+            <button
+              onClick={() => updateUserPreferences({
+                ...comparison.userPreferences!,
+                hideWinner: !comparison.userPreferences?.hideWinner
+              })}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                comparison.userPreferences?.hideWinner ? 'bg-gray-300' : 'bg-blue-600'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  comparison.userPreferences?.hideWinner ? 'translate-x-1' : 'translate-x-6'
+                }`}
+              />
+            </button>
+          </label>
+          <label className="flex items-center justify-between cursor-pointer">
+            <span className="text-sm text-gray-700">Show Scores</span>
+            <button
+              onClick={() => updateUserPreferences({
+                ...comparison.userPreferences!,
+                showScores: !comparison.userPreferences?.showScores
+              })}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                comparison.userPreferences?.showScores ? 'bg-blue-600' : 'bg-gray-300'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  comparison.userPreferences?.showScores ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </label>
         </div>
       </div>
 

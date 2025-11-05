@@ -54,35 +54,59 @@ export default function ComparisonTable() {
   return (
     <div className="space-y-6">
       {/* Header with Actions */}
-      <div className="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Trophy className="w-6 h-6 text-yellow-500" />
-          <div>
-            <h3 className="font-semibold text-gray-900">
-              Winner: {comparison.items.find(i => i.id === winner?.itemId)?.name}
-            </h3>
-            <p className="text-sm text-gray-600">
-              Score: {winner?.totalScore.toFixed(1)} based on your priorities
-            </p>
+      {!comparison.userPreferences?.hideWinner && (
+        <div className="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Trophy className="w-6 h-6 text-yellow-500" />
+            <div>
+              <h3 className="font-semibold text-gray-900">
+                Winner: {comparison.items.find(i => i.id === winner?.itemId)?.name}
+              </h3>
+              <p className="text-sm text-gray-600">
+                Score: {winner?.totalScore.toFixed(1)} based on your priorities
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleExportCSV}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Export CSV
+            </button>
+            <button
+              onClick={reset}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              New Comparison
+            </button>
           </div>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={handleExportCSV}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
-          >
-            <Download className="w-4 h-4" />
-            Export CSV
-          </button>
-          <button
-            onClick={reset}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
-          >
-            <RotateCcw className="w-4 h-4" />
-            New Comparison
-          </button>
+      )}
+
+      {/* Action buttons when winner is hidden */}
+      {comparison.userPreferences?.hideWinner && (
+        <div className="bg-white rounded-lg shadow-sm p-4 flex items-center justify-end">
+          <div className="flex gap-2">
+            <button
+              onClick={handleExportCSV}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Export CSV
+            </button>
+            <button
+              onClick={reset}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              New Comparison
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Comparison Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">

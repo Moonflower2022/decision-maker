@@ -25,7 +25,8 @@ const createDefaultPreferences = (categories: string[]): UserPreferences => ({
   showScores: true,
   sortByScore: false,
   hideCategories: [],
-  colorScheme: 'default'
+  colorScheme: 'default',
+  hideWinner: false
 });
 
 export const useComparisonStore = create<ComparisonStore>((set) => ({
