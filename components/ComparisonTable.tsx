@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useComparisonStore } from '@/lib/store';
 import { rankItems } from '@/lib/scoring/calculator';
 import { getPersonalizedColor } from '@/lib/colors/colorUtils';
-import { Trophy, Download, RotateCcw } from 'lucide-react';
+import { Trophy, Download, RotateCcw, Medal, Award } from 'lucide-react';
 import ItemColumn from './ItemColumn';
 
 export default function ComparisonTable() {
@@ -87,20 +87,122 @@ export default function ComparisonTable() {
       {/* Comparison Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <div className="inline-flex min-w-full">
-            {comparison.items.map((item, index) => {
-              const score = scores.find(s => s.itemId === item.id);
-              return (
-                <ItemColumn
-                  key={item.id}
-                  item={item}
-                  score={score}
-                  isFirst={index === 0}
-                  userPreferences={comparison.userPreferences!}
-                />
-              );
-            })}
-          </div>
+          {/* Table structure for aligned comparison */}
+          <table className="min-w-full divide-y divide-gray-200">
+            {/* Header Row - Item Names */}
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide sticky left-0 bg-gray-50 z-10 border-r border-gray-200">
+                  Category
+                </th>
+                {comparison.items.map((item) => {
+                  const score = scores.find(s => s.itemId === item.id);
+                  return (
+                    <th key={item.id} className="px-6 py-4 text-left border-l border-gray-200">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="font-bold text-lg text-gray-900">{item.name}</h3>
+                        {score?.rank === 1 && <Trophy className="w-5 h-5 text-yellow-500" />}
+                        {score?.rank === 2 && <Medal className="w-5 h-5 text-gray-400" />}
+                        {score?.rank === 3 && <Award className="w-5 h-5 text-amber-600" />}
+                      </div>
+                      {item.description && (
+                        <p className="text-sm text-gray-600 font-normal mb-3">{item.description}</p>
+                      )}
+                      {score && comparison.userPreferences?.showScores && (
+                        <div className="bg-white rounded-lg p-3 border border-gray-200">
+                          <div className="text-xs font-medium text-gray-700">Score</div>
+                          <div className="text-xl font-bold text-blue-600">
+                            {score.totalScore.toFixed(1)}
+                            <span className="text-xs text-gray-500 ml-1">/ 100</span>
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">Rank #{score.rank}</div>
+                        </div>
+                      )}
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+
+            {/* Category Rows */}
+            <tbody className="bg-white divide-y divide-gray-200">
+              {(() => {
+                // Collect all unique categories
+                const allCategories = new Set<string>();
+                comparison.items.forEach(item => {
+                  item.points.forEach(point => allCategories.add(point.category));
+                });
+
+                // Sort categories by average importance
+                const categoryImportance = Array.from(allCategories).map(category => {
+                  const categoryWeight = comparison.userPreferences?.categoryWeights.find(
+                    cw => cw.category.toLowerCase() === category.toLowerCase()
+                  );
+                  return {
+                    category,
+                    importance: categoryWeight?.importance ?? 5
+                  };
+                });
+                categoryImportance.sort((a, b) => b.importance - a.importance);
+
+                return categoryImportance.map(({ category, importance }) => (
+                  <tr key={category} className="hover:bg-gray-50 transition-colors">
+                    {/* Category Name (Sticky Column) */}
+                    <td className="px-6 py-4 align-top sticky left-0 bg-white z-10 border-r border-gray-200">
+                      <div className="font-semibold text-sm text-gray-700 uppercase tracking-wide mb-1">
+                        {category}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Priority: {importance}/10
+                      </div>
+                    </td>
+
+                    {/* Points for each item in this category */}
+                    {comparison.items.map((item) => {
+                      const points = item.points.filter(p => p.category === category);
+                      return (
+                        <td key={item.id} className="px-6 py-4 align-top border-l border-gray-200">
+                          <div className="space-y-2">
+                            {points.length === 0 ? (
+                              <div className="text-sm text-gray-400 italic">No data</div>
+                            ) : (
+                              points.map((point) => {
+                                const style = getPersonalizedColor(point, comparison.userPreferences!);
+                                return (
+                                  <div
+                                    key={point.id}
+                                    className="rounded-lg p-3 border-l-4 transition-all"
+                                    style={{
+                                      backgroundColor: style.backgroundColor,
+                                      opacity: style.opacity,
+                                      borderColor: style.backgroundColor,
+                                      borderLeftWidth: style.borderWidth,
+                                      fontSize: style.fontSize,
+                                      fontWeight: style.fontWeight
+                                    }}
+                                  >
+                                    <div className="flex items-start gap-2">
+                                      <span className="text-xs font-medium opacity-70 mt-0.5">
+                                        {point.type === 'pro' ? '✓' : point.type === 'con' ? '✗' : '○'}
+                                      </span>
+                                      <p className="flex-1 text-gray-900">{point.text}</p>
+                                      <span className="text-xs opacity-60 font-medium">
+                                        {point.weight}/10
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ));
+              })()}
+            </tbody>
+          </table>
         </div>
       </div>
 
