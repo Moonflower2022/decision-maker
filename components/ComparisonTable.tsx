@@ -3,12 +3,12 @@
 import { useMemo } from 'react';
 import { useComparisonStore } from '@/lib/store';
 import { rankItems } from '@/lib/scoring/calculator';
-import { getPersonalizedColor } from '@/lib/colors/colorUtils';
 import { Trophy, Download, RotateCcw, Medal, Award } from 'lucide-react';
 import ItemColumn from './ItemColumn';
+import EditablePoint from './EditablePoint';
 
 export default function ComparisonTable() {
-  const { comparison, reset } = useComparisonStore();
+  const { comparison, reset, updatePoint } = useComparisonStore();
 
   const scores = useMemo(() => {
     if (!comparison || !comparison.userPreferences) return [];
@@ -190,33 +190,15 @@ export default function ComparisonTable() {
                             {points.length === 0 ? (
                               <div className="text-sm text-gray-400 italic">No data</div>
                             ) : (
-                              points.map((point) => {
-                                const style = getPersonalizedColor(point, comparison.userPreferences!);
-                                return (
-                                  <div
-                                    key={point.id}
-                                    className="rounded-lg p-3 border-l-4 transition-all"
-                                    style={{
-                                      backgroundColor: style.backgroundColor,
-                                      opacity: style.opacity,
-                                      borderColor: style.backgroundColor,
-                                      borderLeftWidth: style.borderWidth,
-                                      fontSize: style.fontSize,
-                                      fontWeight: style.fontWeight
-                                    }}
-                                  >
-                                    <div className="flex items-start gap-2">
-                                      <span className="text-xs font-medium opacity-70 mt-0.5">
-                                        {point.type === 'pro' ? '✓' : point.type === 'con' ? '✗' : '○'}
-                                      </span>
-                                      <p className="flex-1 text-gray-900">{point.text}</p>
-                                      <span className="text-xs opacity-60 font-medium">
-                                        {point.weight}/10
-                                      </span>
-                                    </div>
-                                  </div>
-                                );
-                              })
+                              points.map((point) => (
+                                <EditablePoint
+                                  key={point.id}
+                                  point={point}
+                                  itemId={item.id}
+                                  userPreferences={comparison.userPreferences!}
+                                  onUpdate={(pointId, updates) => updatePoint(item.id, pointId, updates)}
+                                />
+                              ))
                             )}
                           </div>
                         </td>

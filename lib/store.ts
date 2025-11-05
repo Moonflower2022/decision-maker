@@ -9,6 +9,7 @@ interface ComparisonStore {
   updateCategoryWeight: (category: string, importance: number) => void;
   addItem: (item: ComparisonItem) => void;
   removeItem: (itemId: string) => void;
+  updatePoint: (itemId: string, pointId: string, updates: { text?: string; weight?: number }) => void;
   reset: () => void;
 }
 
@@ -78,6 +79,33 @@ export const useComparisonStore = create<ComparisonStore>((set) => ({
       comparison: {
         ...state.comparison,
         items: state.comparison.items.filter(item => item.id !== itemId)
+      }
+    };
+  }),
+
+  updatePoint: (itemId, pointId, updates) => set((state) => {
+    if (!state.comparison) return state;
+
+    const updatedItems = state.comparison.items.map(item => {
+      if (item.id !== itemId) return item;
+
+      return {
+        ...item,
+        points: item.points.map(point => {
+          if (point.id !== pointId) return point;
+          return {
+            ...point,
+            ...(updates.text !== undefined && { text: updates.text }),
+            ...(updates.weight !== undefined && { weight: updates.weight })
+          };
+        })
+      };
+    });
+
+    return {
+      comparison: {
+        ...state.comparison,
+        items: updatedItems
       }
     };
   }),
