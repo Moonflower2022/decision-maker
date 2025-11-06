@@ -1,14 +1,18 @@
 import { create } from 'zustand';
 import { Comparison, ComparisonItem, UserPreferences, CategoryWeight } from '@/types/comparison';
 import { generateId } from './utils';
+import { saveToHistory } from './storage';
 
 interface ComparisonStore {
   comparison: Comparison | null;
+  apiKey: string;
   setComparison: (comparison: Comparison) => void;
+  setApiKey: (apiKey: string) => void;
   updateUserPreferences: (preferences: UserPreferences) => void;
   updateCategoryWeight: (category: string, importance: number) => void;
   addItem: (item: ComparisonItem) => void;
   removeItem: (itemId: string) => void;
+  updatePoint: (itemId: string, pointId: string, updates: { text?: string; weight?: number }) => void;
   reset: () => void;
 }
 
@@ -25,21 +29,30 @@ const createDefaultPreferences = (categories: string[]): UserPreferences => ({
   showScores: true,
   sortByScore: false,
   hideCategories: [],
-  colorScheme: 'default'
+  colorScheme: 'default',
+  hideWinner: false
 });
 
 export const useComparisonStore = create<ComparisonStore>((set) => ({
   comparison: null,
+  apiKey: '',
 
-  setComparison: (comparison) => set({ comparison }),
+  setComparison: (comparison) => {
+    saveToHistory(comparison);
+    set({ comparison });
+  },
+
+  setApiKey: (apiKey) => set({ apiKey }),
 
   updateUserPreferences: (preferences) => set((state) => {
     if (!state.comparison) return state;
+    const updatedComparison = {
+      ...state.comparison,
+      userPreferences: preferences
+    };
+    saveToHistory(updatedComparison);
     return {
-      comparison: {
-        ...state.comparison,
-        userPreferences: preferences
-      }
+      comparison: updatedComparison
     };
   }),
 
@@ -50,14 +63,18 @@ export const useComparisonStore = create<ComparisonStore>((set) => ({
       cw.category === category ? { ...cw, importance } : cw
     );
 
-    return {
-      comparison: {
-        ...state.comparison,
-        userPreferences: {
-          ...state.comparison.userPreferences,
-          categoryWeights: updatedWeights
-        }
+    const updatedComparison = {
+      ...state.comparison,
+      userPreferences: {
+        ...state.comparison.userPreferences,
+        categoryWeights: updatedWeights
       }
+    };
+
+    saveToHistory(updatedComparison);
+
+    return {
+      comparison: updatedComparison
     };
   }),
 
@@ -77,6 +94,33 @@ export const useComparisonStore = create<ComparisonStore>((set) => ({
       comparison: {
         ...state.comparison,
         items: state.comparison.items.filter(item => item.id !== itemId)
+      }
+    };
+  }),
+
+  updatePoint: (itemId, pointId, updates) => set((state) => {
+    if (!state.comparison) return state;
+
+    const updatedItems = state.comparison.items.map(item => {
+      if (item.id !== itemId) return item;
+
+      return {
+        ...item,
+        points: item.points.map(point => {
+          if (point.id !== pointId) return point;
+          return {
+            ...point,
+            ...(updates.text !== undefined && { text: updates.text }),
+            ...(updates.weight !== undefined && { weight: updates.weight })
+          };
+        })
+      };
+    });
+
+    return {
+      comparison: {
+        ...state.comparison,
+        items: updatedItems
       }
     };
   }),

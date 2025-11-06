@@ -38,6 +38,7 @@ export interface UserPreferences {
   sortByScore: boolean;
   hideCategories: string[];
   colorScheme: 'default' | 'colorblind' | 'high-contrast' | 'custom';
+  hideWinner?: boolean;
 }
 
 export interface ItemScore {

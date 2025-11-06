@@ -3,12 +3,12 @@
 import { useMemo } from 'react';
 import { useComparisonStore } from '@/lib/store';
 import { rankItems } from '@/lib/scoring/calculator';
-import { getPersonalizedColor } from '@/lib/colors/colorUtils';
-import { Trophy, Download, RotateCcw } from 'lucide-react';
+import { Trophy, Download, RotateCcw, Medal, Award } from 'lucide-react';
 import ItemColumn from './ItemColumn';
+import EditablePoint from './EditablePoint';
 
 export default function ComparisonTable() {
-  const { comparison, reset } = useComparisonStore();
+  const { comparison, reset, updatePoint } = useComparisonStore();
 
   const scores = useMemo(() => {
     if (!comparison || !comparison.userPreferences) return [];
@@ -54,53 +54,161 @@ export default function ComparisonTable() {
   return (
     <div className="space-y-6">
       {/* Header with Actions */}
-      <div className="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Trophy className="w-6 h-6 text-yellow-500" />
-          <div>
-            <h3 className="font-semibold text-gray-900">
-              Winner: {comparison.items.find(i => i.id === winner?.itemId)?.name}
-            </h3>
-            <p className="text-sm text-gray-600">
-              Score: {winner?.totalScore.toFixed(1)} based on your priorities
-            </p>
+      {!comparison.userPreferences?.hideWinner && (
+        <div className="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Trophy className="w-6 h-6 text-yellow-500" />
+            <div>
+              <h3 className="font-semibold text-gray-900">
+                Winner: {comparison.items.find(i => i.id === winner?.itemId)?.name}
+              </h3>
+              <p className="text-sm text-gray-600">
+                Score: {winner?.totalScore.toFixed(1)} based on your priorities
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleExportCSV}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Export CSV
+            </button>
+            <button
+              onClick={reset}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              New Comparison
+            </button>
           </div>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={handleExportCSV}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
-          >
-            <Download className="w-4 h-4" />
-            Export CSV
-          </button>
-          <button
-            onClick={reset}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
-          >
-            <RotateCcw className="w-4 h-4" />
-            New Comparison
-          </button>
+      )}
+
+      {/* Action buttons when winner is hidden */}
+      {comparison.userPreferences?.hideWinner && (
+        <div className="bg-white rounded-lg shadow-sm p-4 flex items-center justify-end">
+          <div className="flex gap-2">
+            <button
+              onClick={handleExportCSV}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Export CSV
+            </button>
+            <button
+              onClick={reset}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              New Comparison
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Comparison Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <div className="inline-flex min-w-full">
-            {comparison.items.map((item, index) => {
-              const score = scores.find(s => s.itemId === item.id);
-              return (
-                <ItemColumn
-                  key={item.id}
-                  item={item}
-                  score={score}
-                  isFirst={index === 0}
-                  userPreferences={comparison.userPreferences!}
-                />
-              );
-            })}
-          </div>
+          {/* Table structure for aligned comparison */}
+          <table className="min-w-full divide-y divide-gray-200">
+            {/* Header Row - Item Names */}
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide sticky left-0 bg-gray-50 z-10 border-r border-gray-200">
+                  Category
+                </th>
+                {comparison.items.map((item) => {
+                  const score = scores.find(s => s.itemId === item.id);
+                  return (
+                    <th key={item.id} className="px-6 py-4 text-left border-l border-gray-200">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="font-bold text-lg text-gray-900">{item.name}</h3>
+                        {score?.rank === 1 && <Trophy className="w-5 h-5 text-yellow-500" />}
+                        {score?.rank === 2 && <Medal className="w-5 h-5 text-gray-400" />}
+                        {score?.rank === 3 && <Award className="w-5 h-5 text-amber-600" />}
+                      </div>
+                      {item.description && (
+                        <p className="text-sm text-gray-600 font-normal mb-3">{item.description}</p>
+                      )}
+                      {score && comparison.userPreferences?.showScores && (
+                        <div className="bg-white rounded-lg p-3 border border-gray-200">
+                          <div className="text-xs font-medium text-gray-700">Score</div>
+                          <div className="text-xl font-bold text-blue-600">
+                            {score.totalScore.toFixed(1)}
+                            <span className="text-xs text-gray-500 ml-1">/ 100</span>
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">Rank #{score.rank}</div>
+                        </div>
+                      )}
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+
+            {/* Category Rows */}
+            <tbody className="bg-white divide-y divide-gray-200">
+              {(() => {
+                // Collect all unique categories
+                const allCategories = new Set<string>();
+                comparison.items.forEach(item => {
+                  item.points.forEach(point => allCategories.add(point.category));
+                });
+
+                // Sort categories by average importance
+                const categoryImportance = Array.from(allCategories).map(category => {
+                  const categoryWeight = comparison.userPreferences?.categoryWeights.find(
+                    cw => cw.category.toLowerCase() === category.toLowerCase()
+                  );
+                  return {
+                    category,
+                    importance: categoryWeight?.importance ?? 5
+                  };
+                });
+                categoryImportance.sort((a, b) => b.importance - a.importance);
+
+                return categoryImportance.map(({ category, importance }) => (
+                  <tr key={category} className="hover:bg-gray-50 transition-colors">
+                    {/* Category Name (Sticky Column) */}
+                    <td className="px-6 py-4 align-top sticky left-0 bg-white z-10 border-r border-gray-200">
+                      <div className="font-semibold text-sm text-gray-700 uppercase tracking-wide mb-1">
+                        {category}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Priority: {importance}/10
+                      </div>
+                    </td>
+
+                    {/* Points for each item in this category */}
+                    {comparison.items.map((item) => {
+                      const points = item.points.filter(p => p.category === category);
+                      return (
+                        <td key={item.id} className="px-6 py-4 align-top border-l border-gray-200">
+                          <div className="space-y-2">
+                            {points.length === 0 ? (
+                              <div className="text-sm text-gray-400 italic">No data</div>
+                            ) : (
+                              points.map((point) => (
+                                <EditablePoint
+                                  key={point.id}
+                                  point={point}
+                                  itemId={item.id}
+                                  userPreferences={comparison.userPreferences!}
+                                  onUpdate={(pointId, updates) => updatePoint(item.id, pointId, updates)}
+                                />
+                              ))
+                            )}
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ));
+              })()}
+            </tbody>
+          </table>
         </div>
       </div>
 
