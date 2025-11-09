@@ -14,6 +14,7 @@ interface ComparisonStore {
   updateCategoryWeight: (category: string, importance: number) => void;
   addItem: (item: ComparisonItem) => void;
   removeItem: (itemId: string) => void;
+  addPoint: (itemId: string, category: string, text: string, weight: number, type: 'pro' | 'con' | 'neutral') => void;
   updatePoint: (itemId: string, pointId: string, updates: { text?: string; weight?: number }) => void;
   deletePoint: (itemId: string, pointId: string) => void;
   updateTitle: (title: string) => void;
@@ -134,6 +135,41 @@ export const useComparisonStore = create<ComparisonStore>((set, get) => {
     };
     saveCurrentComparison(updatedComparison);
     saveState(updatedComparison, newUndoStack, []);
+    return {
+      comparison: updatedComparison,
+      undoStack: newUndoStack,
+      redoStack: []
+    };
+  }),
+
+  addPoint: (itemId, category, text, weight, type) => set((state) => {
+    if (!state.comparison) return state;
+
+    const newUndoStack = [...state.undoStack, state.comparison];
+    const newPoint = {
+      id: generateId(),
+      text,
+      type,
+      weight,
+      category
+    };
+
+    const updatedItems = state.comparison.items.map(item => {
+      if (item.id !== itemId) return item;
+      return {
+        ...item,
+        points: [...item.points, newPoint]
+      };
+    });
+
+    const updatedComparison = {
+      ...state.comparison,
+      items: updatedItems
+    };
+
+    saveCurrentComparison(updatedComparison);
+    saveState(updatedComparison, newUndoStack, []);
+
     return {
       comparison: updatedComparison,
       undoStack: newUndoStack,

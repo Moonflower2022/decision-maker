@@ -8,9 +8,10 @@ import ItemColumn from './ItemColumn';
 import EditablePoint from './EditablePoint';
 import HistoryPanel from './HistoryPanel';
 import SpiderChart from './SpiderChart';
+import AddPointButton from './AddPointButton';
 
 export default function ComparisonTable() {
-  const { comparison, reset, updatePoint, removeItem, updateTitle, deletePoint } = useComparisonStore();
+  const { comparison, reset, updatePoint, removeItem, updateTitle, deletePoint, addPoint } = useComparisonStore();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState('');
   const [showSpiderChart, setShowSpiderChart] = useState(false);
@@ -282,20 +283,21 @@ export default function ComparisonTable() {
                       return (
                         <td key={item.id} className="px-6 py-4 align-top border-l border-gray-200">
                           <div className="space-y-2">
-                            {points.length === 0 ? (
-                              <div className="text-sm text-gray-400 italic">No data</div>
-                            ) : (
-                              points.map((point) => (
-                                <EditablePoint
-                                  key={point.id}
-                                  point={point}
-                                  itemId={item.id}
-                                  userPreferences={comparison.userPreferences!}
-                                  onUpdate={(pointId, updates) => updatePoint(item.id, pointId, updates)}
-                                  onDelete={(pointId) => deletePoint(item.id, pointId)}
-                                />
-                              ))
-                            )}
+                            {points.map((point) => (
+                              <EditablePoint
+                                key={point.id}
+                                point={point}
+                                itemId={item.id}
+                                userPreferences={comparison.userPreferences!}
+                                onUpdate={(pointId, updates) => updatePoint(item.id, pointId, updates)}
+                                onDelete={(pointId) => deletePoint(item.id, pointId)}
+                              />
+                            ))}
+                            <AddPointButton
+                              itemId={item.id}
+                              category={category}
+                              onAdd={addPoint}
+                            />
                           </div>
                         </td>
                       );
