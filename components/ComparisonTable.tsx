@@ -3,15 +3,17 @@
 import { useMemo, useState } from 'react';
 import { useComparisonStore } from '@/lib/store';
 import { rankItems } from '@/lib/scoring/calculator';
-import { Trophy, Download, RotateCcw, Medal, Award, X, Edit2, Check } from 'lucide-react';
+import { Trophy, Download, RotateCcw, Medal, Award, X, Edit2, Check, BarChart3 } from 'lucide-react';
 import ItemColumn from './ItemColumn';
 import EditablePoint from './EditablePoint';
 import HistoryPanel from './HistoryPanel';
+import SpiderChart from './SpiderChart';
 
 export default function ComparisonTable() {
   const { comparison, reset, updatePoint, removeItem, updateTitle, deletePoint } = useComparisonStore();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState('');
+  const [showSpiderChart, setShowSpiderChart] = useState(false);
 
   const scores = useMemo(() => {
     if (!comparison || !comparison.userPreferences) return [];
@@ -125,6 +127,15 @@ export default function ComparisonTable() {
           <div className="flex gap-2">
             <HistoryPanel />
             <button
+              onClick={() => setShowSpiderChart(!showSpiderChart)}
+              className={`px-4 py-2 border rounded-lg transition-colors flex items-center gap-2 ${
+                showSpiderChart ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4" />
+              {showSpiderChart ? 'Hide Chart' : 'Show Chart'}
+            </button>
+            <button
               onClick={handleExportCSV}
               className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
             >
@@ -148,6 +159,15 @@ export default function ComparisonTable() {
           <div className="flex gap-2">
             <HistoryPanel />
             <button
+              onClick={() => setShowSpiderChart(!showSpiderChart)}
+              className={`px-4 py-2 border rounded-lg transition-colors flex items-center gap-2 ${
+                showSpiderChart ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4" />
+              {showSpiderChart ? 'Hide Chart' : 'Show Chart'}
+            </button>
+            <button
               onClick={handleExportCSV}
               className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
             >
@@ -163,6 +183,11 @@ export default function ComparisonTable() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Spider Chart */}
+      {showSpiderChart && (
+        <SpiderChart items={comparison.items} userPreferences={comparison.userPreferences!} />
       )}
 
       {/* Comparison Table */}
