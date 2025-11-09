@@ -1,15 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import InputForm from '@/components/InputForm';
 import ComparisonTable from '@/components/ComparisonTable';
 import PriorityPanel from '@/components/customization/PriorityPanel';
 import RefinementPanel from '@/components/RefinementPanel';
+import UndoRedoButtons from '@/components/UndoRedoButtons';
 import { useComparisonStore } from '@/lib/store';
 
 export default function Home() {
-  const { comparison } = useComparisonStore();
+  const { comparison, undo, redo } = useComparisonStore();
   const [showPriorityPanel, setShowPriorityPanel] = useState(true);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const modifier = isMac ? e.metaKey : e.ctrlKey;
+
+      if (modifier && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if (modifier && (e.key === 'Z' || (e.shiftKey && e.key === 'z'))) {
+        e.preventDefault();
+        redo();
+      } else if (modifier && e.key === 'y') {
+        e.preventDefault();
+        redo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -20,14 +42,17 @@ export default function Home() {
               <h1 className="text-3xl font-bold text-gray-900">Decision Maker</h1>
               <p className="text-sm text-gray-600 mt-1">Compare options with personalized priorities</p>
             </div>
-            {comparison && (
-              <button
-                onClick={() => setShowPriorityPanel(!showPriorityPanel)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                {showPriorityPanel ? 'Hide' : 'Show'} Priorities
-              </button>
-            )}
+            <div className="flex items-center gap-4">
+              {comparison && <UndoRedoButtons />}
+              {comparison && (
+                <button
+                  onClick={() => setShowPriorityPanel(!showPriorityPanel)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  {showPriorityPanel ? 'Hide' : 'Show'} Priorities
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </header>

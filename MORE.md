@@ -6,7 +6,7 @@ have a screen on the homepage that shows previous preferences and lets you edit 
 
 default should be the personalized one
 
-undo/redo for edits
+~~undo/redo for edits~~
 
 export to csv (make it correct)
 

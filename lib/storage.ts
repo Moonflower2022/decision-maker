@@ -3,6 +3,7 @@ import { Comparison, UserPreferences } from '@/types/comparison';
 const HISTORY_KEY = 'decision-maker-history';
 const CURRENT_KEY = 'decision-maker-current';
 const PREFERENCES_KEY = 'decision-maker-preferences';
+const UNDO_REDO_KEY = 'decision-maker-undo-redo';
 const MAX_HISTORY_ITEMS = 20;
 
 export interface ComparisonHistoryItem {
@@ -211,5 +212,50 @@ export function loadDisplayPreferences(): { showScores: boolean; hideWinner: boo
   } catch (error) {
     console.error('Failed to load preferences:', error);
     return { showScores: true, hideWinner: false };
+  }
+}
+
+/**
+ * Save undo/redo stacks
+ */
+export function saveUndoRedoStack(undoStack: Comparison[], redoStack: Comparison[]): void {
+  if (typeof window === 'undefined') return;
+
+  try {
+    localStorage.setItem(UNDO_REDO_KEY, JSON.stringify({ undoStack, redoStack }));
+  } catch (error) {
+    console.error('Failed to save undo/redo stack:', error);
+  }
+}
+
+/**
+ * Load undo/redo stacks
+ */
+export function loadUndoRedoStack(): { undoStack: Comparison[]; redoStack: Comparison[] } {
+  if (typeof window === 'undefined') return { undoStack: [], redoStack: [] };
+
+  try {
+    const stored = localStorage.getItem(UNDO_REDO_KEY);
+    if (!stored) return { undoStack: [], redoStack: [] };
+
+    const parsed = JSON.parse(stored);
+
+    // Convert date strings back to Date objects
+    const undoStack = parsed.undoStack.map((comp: any) => ({
+      ...comp,
+      createdAt: new Date(comp.createdAt),
+      updatedAt: new Date(comp.updatedAt)
+    }));
+
+    const redoStack = parsed.redoStack.map((comp: any) => ({
+      ...comp,
+      createdAt: new Date(comp.createdAt),
+      updatedAt: new Date(comp.updatedAt)
+    }));
+
+    return { undoStack, redoStack };
+  } catch (error) {
+    console.error('Failed to load undo/redo stack:', error);
+    return { undoStack: [], redoStack: [] };
   }
 }
